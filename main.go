@@ -118,7 +118,7 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 			needFilter = true
 		} else {
 			for _, path := range this.config.FilterPaths {
-				if strings.Index(ctx.Input.URL(), path) {
+				if strings.Index(ctx.Input.URL(), path) >= 0 {
 					needFilter = true
 					break
 				}
