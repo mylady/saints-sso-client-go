@@ -181,14 +181,19 @@ func getToken(client *SSOClient, ctx *context.Context) {
 }
 
 func parseToken(ctx *context.Context) (ssotoken string, err error) {
-	sessiontoken := ctx.Input.Session("token")
-	if ssotoken, ok := sessiontoken.(string); !ok {
-		err = errors.New("not valid token")
+	sessiontoken := ctx.Input.CruSession.Get("token")
+	if sessiontoken == nil {
+		err = errors.New("not authorized")
 	} else {
-		if ssotoken == "" {
-			err = errors.New("not authroized")
+		if ssotoken, ok := sessiontoken.(string); !ok {
+			err = errors.New("not valid token")
+		} else {
+			if ssotoken == "" {
+				err = errors.New("not authorized")
+			}
 		}
 	}
+
 	return ssotoken, err
 }
 
