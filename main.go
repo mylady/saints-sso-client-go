@@ -134,6 +134,14 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 	}
 }
 
+func (this *SSOClient) GetUserInfo(ctx *context.Context) (data []byte, err error) {
+	var ssotoken string
+	if ssotoken, err = parseToken(ctx); err == nil {
+		data, err = get(this.userInfo + "?acces_token=" + ssotoken)
+	}
+	return data, err
+}
+
 func getCode(client *SSOClient, ctx *context.Context) {
 	var loginUri string
 	if client.nativeLogin {
@@ -143,15 +151,13 @@ func getCode(client *SSOClient, ctx *context.Context) {
 	}
 
 	query := fmt.Sprintf("client_id=%s&redirect_uri=%s&login_uri=%s",
-		client.config.ClientId, client.config.RedirectUri, loginUri)
-	query = url.QueryEscape(query)
+		client.config.ClientId, client.config.RedirectUri, url.QueryEscape(loginUri))
 	ctx.Redirect(200, client.authProxyLogin+"?"+query)
 }
 
 func getToken(client *SSOClient, ctx *context.Context) {
 	query := fmt.Sprintf("grant_type=authorization_code&code=%s&client_id=%s&client_secret=%s&redirect_uri=%s",
-		ctx.Input.Query("code"), client.config.ClientId, client.config.ClientSecret, client.config.RedirectUri)
-	query = url.QueryEscape(query)
+		ctx.Input.Query("code"), client.config.ClientId, client.config.ClientSecret, url.QueryEscape(client.config.RedirectUri))
 	ctx.Redirect(200, client.authProxyToken+"?"+query)
 }
 
