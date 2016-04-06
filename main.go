@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
 )
 
@@ -37,7 +38,7 @@ func (this *SSOClient) init() {
 		this.authProxyToken = this.authBase + "/proxylogin/proxytoken"
 		this.userInfo = this.authResource + "/userinfo"
 		this.loginUri = this.config.LoginUri
-		this.nativeLogin = this.config.LoginUri == ""
+		this.nativeLogin = this.config.LoginUri != ""
 		this.ssoLoginUri = this.authBase + "/login?client_id=" + this.config.ClientId + "&redirect_uri=" + this.config.RedirectUri
 		this.logoutUri = this.authBase + "/logout"
 		if this.config.LoginUri != "" {
@@ -79,12 +80,14 @@ func NewSSOClient(config SSOConfig) (client *SSOClient, err error) {
 }
 
 func (this *SSOClient) HijackRequest(ctx *context.Context) {
+	beego.Debug(ctx.Input.URL())
+
 	if ctx.Input.URL() == "/" && strings.Index(ctx.Input.URI(), "&") < 0 {
 		if ctx.Input.Query("code") != "" && ctx.Input.Query("err") == "" {
 			getToken(this, ctx)
 		} else if ctx.Input.Query("token") != "" {
 			ctx.Output.Session("token", ctx.Input.Query("token"))
-			ctx.Redirect(200, this.config.RedirectUri)
+			ctx.Redirect(302, this.config.RedirectUri)
 		} else {
 			if ssotoken, err := parseToken(ctx); err == nil {
 				if err := validateToken(this, ssotoken); err != nil {
@@ -100,16 +103,16 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 			if err := validateToken(this, ssotoken); err != nil {
 				ctx.Output.Session("token", "")
 				if this.nativeLogin {
-					ctx.Redirect(200, this.loginUri)
+					ctx.Redirect(302, this.loginUri)
 				} else {
-					ctx.Redirect(200, this.ssoLoginUri)
+					ctx.Redirect(302, this.ssoLoginUri)
 				}
 			} else {
-				ctx.Redirect(200, this.config.RedirectUri)
+				ctx.Redirect(302, this.config.RedirectUri)
 			}
 		} else {
 			if !this.nativeLogin {
-				ctx.Redirect(200, this.ssoLoginUri)
+				ctx.Redirect(302, this.ssoLoginUri)
 			}
 		}
 	} else {
@@ -152,9 +155,9 @@ func (this *SSOClient) Logout(ctx *context.Context) (err error) {
 		if _, err = get(this.logoutUri + "?acces_token=" + ssotoken); err == nil {
 			ctx.Output.Session("token", "")
 			if this.nativeLogin {
-				ctx.Redirect(200, this.loginUri)
+				ctx.Redirect(302, this.loginUri)
 			} else {
-				ctx.Redirect(200, this.ssoLoginUri)
+				ctx.Redirect(302, this.ssoLoginUri)
 			}
 		}
 	}
@@ -168,16 +171,15 @@ func getCode(client *SSOClient, ctx *context.Context) {
 	} else {
 		loginUri = client.ssoLoginUri
 	}
-
 	query := fmt.Sprintf("client_id=%s&redirect_uri=%s&login_uri=%s",
 		client.config.ClientId, client.config.RedirectUri, url.QueryEscape(loginUri))
-	ctx.Redirect(200, client.authProxyLogin+"?"+query)
+	ctx.Redirect(302, client.authProxyLogin+"?"+query)
 }
 
 func getToken(client *SSOClient, ctx *context.Context) {
 	query := fmt.Sprintf("grant_type=authorization_code&code=%s&client_id=%s&client_secret=%s&redirect_uri=%s",
 		ctx.Input.Query("code"), client.config.ClientId, client.config.ClientSecret, url.QueryEscape(client.config.RedirectUri))
-	ctx.Redirect(200, client.authProxyToken+"?"+query)
+	ctx.Redirect(302, client.authProxyToken+"?"+query)
 }
 
 func parseToken(ctx *context.Context) (ssotoken string, err error) {
