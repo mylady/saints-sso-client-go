@@ -142,6 +142,21 @@ func (this *SSOClient) GetUserInfo(ctx *context.Context) (data []byte, err error
 	return data, err
 }
 
+func (this *SSOClient) Logout(ctx *context.Context) (err error) {
+	var ssotoken string
+	if ssotoken, err = parseToken(ctx); err == nil {
+		if _, err = get(this.logoutUri + "?acces_token=" + ssotoken); err == nil {
+			ctx.Output.Session("token", "")
+			if this.nativeLogin {
+				ctx.Redirect(200, this.loginUri)
+			} else {
+				ctx.Redirect(200, this.ssoLoginUri)
+			}
+		}
+	}
+	return err
+}
+
 func getCode(client *SSOClient, ctx *context.Context) {
 	var loginUri string
 	if client.nativeLogin {
@@ -167,7 +182,7 @@ func parseToken(ctx *context.Context) (ssotoken string, err error) {
 		err = errors.New("not valid token")
 	} else {
 		if ssotoken == "" {
-			err = errors.New("no token")
+			err = errors.New("not authroized")
 		}
 	}
 	return ssotoken, err
