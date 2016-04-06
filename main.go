@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/astaxie/beego"
+	_ "github.com/astaxie/beego"
 	"github.com/astaxie/beego/context"
 )
 
@@ -80,18 +80,16 @@ func NewSSOClient(config SSOConfig) (client *SSOClient, err error) {
 }
 
 func (this *SSOClient) HijackRequest(ctx *context.Context) {
-	beego.Debug(ctx.Input.URL())
-
 	if ctx.Input.URL() == "/" && strings.Index(ctx.Input.URI(), "&") < 0 {
 		if ctx.Input.Query("code") != "" && ctx.Input.Query("err") == "" {
 			getToken(this, ctx)
 		} else if ctx.Input.Query("token") != "" {
-			ctx.Output.Session("token", ctx.Input.Query("token"))
+			ctx.Input.CruSession.Set("token", ctx.Input.Query("token"))
 			ctx.Redirect(302, this.config.RedirectUri)
 		} else {
 			if ssotoken, err := parseToken(ctx); err == nil {
 				if err := validateToken(this, ssotoken); err != nil {
-					ctx.Output.Session("token", "")
+					ctx.Input.CruSession.Set("token", "")
 					getCode(this, ctx)
 				}
 			} else {
@@ -101,7 +99,7 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 	} else if this.loginPath != "" && ctx.Input.URL() == this.loginPath {
 		if ssotoken, err := parseToken(ctx); err == nil {
 			if err := validateToken(this, ssotoken); err != nil {
-				ctx.Output.Session("token", "")
+				ctx.Input.CruSession.Set("token", "")
 				if this.nativeLogin {
 					ctx.Redirect(302, this.loginUri)
 				} else {
@@ -131,7 +129,7 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 		if needFilter {
 			if ssotoken, err := parseToken(ctx); err == nil {
 				if err := validateToken(this, ssotoken); err != nil {
-					ctx.Output.Session("token", "")
+					ctx.Input.CruSession.Set("token", "")
 					getCode(this, ctx)
 				}
 			} else {
@@ -153,7 +151,7 @@ func (this *SSOClient) Logout(ctx *context.Context) (err error) {
 	var ssotoken string
 	if ssotoken, err = parseToken(ctx); err == nil {
 		if _, err = get(this.logoutUri + "?acces_token=" + ssotoken); err == nil {
-			ctx.Output.Session("token", "")
+			ctx.Input.CruSession.Set("token", "")
 			if this.nativeLogin {
 				ctx.Redirect(302, this.loginUri)
 			} else {
@@ -187,7 +185,8 @@ func parseToken(ctx *context.Context) (ssotoken string, err error) {
 	if sessiontoken == nil {
 		err = errors.New("not authorized")
 	} else {
-		if ssotoken, ok := sessiontoken.(string); !ok {
+		ok := false
+		if ssotoken, ok = sessiontoken.(string); !ok {
 			err = errors.New("not valid token")
 		} else {
 			if ssotoken == "" {
@@ -195,7 +194,6 @@ func parseToken(ctx *context.Context) (ssotoken string, err error) {
 			}
 		}
 	}
-
 	return ssotoken, err
 }
 
