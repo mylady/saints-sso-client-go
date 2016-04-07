@@ -147,7 +147,7 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 func (this *SSOClient) GetUserInfo(ctx *context.Context) (data []byte, err error) {
 	var ssotoken string
 	if ssotoken, err = parseToken(ctx); err == nil {
-		data, err = get(this.userInfo + "?acces_token=" + ssotoken)
+		data, err = get(this.userInfo + "?access_token=" + ssotoken)
 	}
 	return data, err
 }
@@ -155,7 +155,7 @@ func (this *SSOClient) GetUserInfo(ctx *context.Context) (data []byte, err error
 func (this *SSOClient) Logout(ctx *context.Context) (err error) {
 	var ssotoken string
 	if ssotoken, err = parseToken(ctx); err == nil {
-		if _, err = get(this.logoutUri + "?acces_token=" + ssotoken); err == nil {
+		if _, err = get(this.logoutUri + "?access_token=" + ssotoken); err == nil {
 			ctx.Input.CruSession.Set("token", "")
 			if this.nativeLogin {
 				ctx.Redirect(302, this.loginUri)
