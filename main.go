@@ -12,6 +12,10 @@ import (
 	"github.com/astaxie/beego/context"
 )
 
+const (
+	ClientPassed = "SSOClient"
+)
+
 type SSOClient struct {
 	config         *SSOConfig
 	authBase       string
@@ -80,6 +84,7 @@ func NewSSOClient(config SSOConfig) (client *SSOClient, err error) {
 }
 
 func (this *SSOClient) HijackRequest(ctx *context.Context) {
+	ctx.Input.SetData(ClientPassed, this)
 	if ctx.Input.URL() == "/" && strings.Index(ctx.Input.URI(), "&") < 0 {
 		if ctx.Input.Query("code") != "" && ctx.Input.Query("err") == "" {
 			getToken(this, ctx)
