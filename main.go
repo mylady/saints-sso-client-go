@@ -95,10 +95,10 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 			if ssotoken, err := parseToken(ctx); err == nil {
 				if err := validateToken(this, ssotoken); err != nil {
 					ctx.Input.CruSession.Set("token", "")
-					getCode(this, ctx)
+					getCode(this, ctx, err)
 				}
 			} else {
-				getCode(this, ctx)
+				getCode(this, ctx, err)
 			}
 		}
 	} else if this.loginPath != "" && ctx.Input.URL() == this.loginPath {
@@ -135,10 +135,10 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 			if ssotoken, err := parseToken(ctx); err == nil {
 				if err := validateToken(this, ssotoken); err != nil {
 					ctx.Input.CruSession.Set("token", "")
-					getCode(this, ctx)
+					getCode(this, ctx, err)
 				}
 			} else {
-				getCode(this, ctx)
+				getCode(this, ctx, err)
 			}
 		}
 	}
@@ -167,7 +167,7 @@ func (this *SSOClient) Logout(ctx *context.Context) (err error) {
 	return err
 }
 
-func getCode(client *SSOClient, ctx *context.Context) {
+func getCode(client *SSOClient, ctx *context.Context, err error) {
 	var loginUri string
 	if client.nativeLogin {
 		loginUri = client.loginUri
@@ -176,7 +176,13 @@ func getCode(client *SSOClient, ctx *context.Context) {
 	}
 	query := fmt.Sprintf("client_id=%s&redirect_uri=%s&login_uri=%s",
 		client.config.ClientId, client.config.RedirectUri, url.QueryEscape(loginUri))
-	ctx.Redirect(302, client.authProxyLogin+"?"+query)
+
+	if ctx.Input.IsAjax() {
+		ctx.Output.Status = 403
+		ctx.Output.JSON(err, false, true)
+	} else {
+		ctx.Redirect(302, client.authProxyLogin+"?"+query)
+	}
 }
 
 func getToken(client *SSOClient, ctx *context.Context) {
