@@ -18,6 +18,8 @@ const (
 
 type SSOUser struct {
 	PublicUserId string `json:"public_user_id"`
+	UserName     string `json:"user_name"`
+	UserPwd      string `json:"user_pwd"`
 	NickName     string `json:"nick_name"`
 	Avatar       string `json:"avatar"`
 	Wechat       string `json:"wechat"`
