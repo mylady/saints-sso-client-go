@@ -16,6 +16,16 @@ const (
 	ClientPassed = "SSOClient"
 )
 
+type SSOUser struct {
+	PublicUserId string `json:"public_user_id"`
+	NickName     string `json:"nick_name"`
+	Avatar       string `json:"avatar"`
+	Wechat       string `json:"wechat"`
+	Email        string `json:"emial"`
+	Mobile       string `json:"mobile"`
+	RealName     string `json:"real_name"`
+}
+
 type SSOClient struct {
 	config         *SSOConfig
 	authBase       string
