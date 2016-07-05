@@ -26,6 +26,7 @@ type SSOUser struct {
 	Email        string `json:"emial"`
 	Mobile       string `json:"mobile"`
 	RealName     string `json:"real_name"`
+	IdNumber     string `json:"id_number"`
 }
 
 type SSOClient struct {
