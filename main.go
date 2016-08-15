@@ -100,6 +100,7 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 	ctx.Input.SetData(ClientPassed, this)
 	if ctx.Input.URL() == "/" && strings.Index(ctx.Input.URI(), "&") < 0 {
 		if ctx.Input.Query("code") != "" && ctx.Input.Query("err") == "" {
+			fmt.Println("filter / to get token")
 			getToken(this, ctx)
 		} else if ctx.Input.Query("token") != "" {
 			ctx.Input.CruSession.Set("token", ctx.Input.Query("token"))
@@ -194,6 +195,7 @@ func getCode(client *SSOClient, ctx *context.Context, err error) {
 		ctx.Output.Status = 403
 		ctx.Output.JSON(err, false, true)
 	} else {
+		fmt.Printf("get code to redirect %s\r\n", query)
 		ctx.Redirect(302, client.authProxyLogin+"?"+query)
 	}
 }
@@ -218,12 +220,20 @@ func parseToken(ctx *context.Context) (ssotoken string, err error) {
 			}
 		}
 	}
+
+	if err != nil {
+		fmt.Printf("parse token error is %v\r\n", err)
+	}
+
 	return ssotoken, err
 }
 
 func validateToken(client *SSOClient, token string) (err error) {
 	url := client.authValidate + "?access_token=" + token
 	_, err = get(url)
+	if err != nil {
+		fmt.Printf("validate token err is %v\r\n", err)
+	}
 	return err
 }
 
