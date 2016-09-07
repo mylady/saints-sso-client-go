@@ -220,7 +220,7 @@ func parseToken(ctx *context.Context) (ssotoken string, err error) {
 	}
 
 	if err != nil {
-		fmt.Printf("parse token error is %v\r\n", err)
+		fmt.Printf("parse token error is %s\r\n", err.Error())
 	}
 
 	return ssotoken, err
@@ -230,7 +230,7 @@ func validateToken(client *SSOClient, token string) (err error) {
 	url := client.authValidate + "?access_token=" + token
 	_, err = get(url)
 	if err != nil {
-		fmt.Printf("validate token err is %v\r\n", err)
+		fmt.Printf("validate token err is %s\r\n", err.Error())
 	}
 	return err
 }
