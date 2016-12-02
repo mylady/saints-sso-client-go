@@ -29,6 +29,12 @@ type SSOUser struct {
 	IdNumber     string `json:"id_number"`
 }
 
+type SSOPermit struct {
+	ClientId       string `json:"client_id"`
+	PermissionCode string `json:"permission_code"`
+	IsPermitted    bool   `json:"is_permitted"`
+}
+
 type SSOClient struct {
 	config         *SSOConfig
 	authBase       string
@@ -38,6 +44,7 @@ type SSOClient struct {
 	authProxyLogin string
 	authProxyToken string
 	userInfo       string
+	permCheck      string
 	nativeLogin    bool
 	loginUri       string
 	ssoLoginUri    string
@@ -54,6 +61,7 @@ func (this *SSOClient) init() {
 		this.authProxyLogin = this.authBase + "/proxylogin"
 		this.authProxyToken = this.authBase + "/proxylogin/proxytoken"
 		this.userInfo = this.authResource + "/userinfo"
+		this.permCheck = this.authResource + "/clientperm"
 		this.loginUri = this.config.LoginUri
 		this.nativeLogin = this.config.LoginUri != ""
 		this.ssoLoginUri = this.authBase + "/login?client_id=" + this.config.ClientId + "&redirect_uri=" + this.config.RedirectUri
@@ -161,6 +169,16 @@ func (this *SSOClient) GetUserInfo(ctx *context.Context) (data []byte, err error
 	var ssotoken string
 	if ssotoken, err = parseToken(ctx); err == nil {
 		data, err = get(this.userInfo + "?access_token=" + ssotoken)
+	}
+	return data, err
+}
+
+func (this *SSOClient) CheckClientPermission(ctx *context.Context) (data []byte, err error) {
+	var ssotoken string
+	clientid := ctx.Input.Query("client_id")
+	permissioncode := ctx.Input.Query("permission_code")
+	if ssotoken, err = parseToken(ctx); err == nil {
+		data, err = get(this.permCheck + "?access_token=" + ssotoken + "&client_id=" + clientid + "&permission_code=" + permissioncode)
 	}
 	return data, err
 }
