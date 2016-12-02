@@ -36,7 +36,7 @@ type SSOPermit struct {
 }
 
 type SSOClient struct {
-	config         *SSOConfig
+	Config         *SSOConfig
 	authBase       string
 	authValidate   string
 	authResource   string
@@ -53,8 +53,8 @@ type SSOClient struct {
 }
 
 func (this *SSOClient) init() {
-	if this.config != nil {
-		this.authBase = fmt.Sprintf("http://%s:%d/oauth", this.config.AuthHost, this.config.AuthPort)
+	if this.Config != nil {
+		this.authBase = fmt.Sprintf("http://%s:%d/oauth", this.Config.AuthHost, this.Config.AuthPort)
 		this.authValidate = this.authBase + "/v"
 		this.authResource = this.authBase + "/p"
 		this.authService = this.authBase + "/s"
@@ -62,12 +62,12 @@ func (this *SSOClient) init() {
 		this.authProxyToken = this.authBase + "/proxylogin/proxytoken"
 		this.userInfo = this.authResource + "/userinfo"
 		this.permCheck = this.authResource + "/clientperm"
-		this.loginUri = this.config.LoginUri
-		this.nativeLogin = this.config.LoginUri != ""
-		this.ssoLoginUri = this.authBase + "/login?client_id=" + this.config.ClientId + "&redirect_uri=" + this.config.RedirectUri
+		this.loginUri = this.Config.LoginUri
+		this.nativeLogin = this.Config.LoginUri != ""
+		this.ssoLoginUri = this.authBase + "/login?client_id=" + this.Config.ClientId + "&redirect_uri=" + this.Config.RedirectUri
 		this.logoutUri = this.authBase + "/logout"
-		if this.config.LoginUri != "" {
-			if uri, err := url.Parse(this.config.LoginUri); err == nil {
+		if this.Config.LoginUri != "" {
+			if uri, err := url.Parse(this.Config.LoginUri); err == nil {
 				this.loginPath = uri.Path
 			}
 		}
@@ -97,7 +97,7 @@ func NewSSOClient(config SSOConfig) (client *SSOClient, err error) {
 		err = errors.New("Need at least on path to filter")
 	} else {
 		client = &SSOClient{
-			config: &config,
+			Config: &config,
 		}
 		client.init()
 	}
@@ -111,7 +111,7 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 			getToken(this, ctx)
 		} else if ctx.Input.Query("token") != "" {
 			ctx.Input.CruSession.Set("token", ctx.Input.Query("token"))
-			ctx.Redirect(302, this.config.RedirectUri)
+			ctx.Redirect(302, this.Config.RedirectUri)
 		} else {
 			if ssotoken, err := parseToken(ctx); err == nil {
 				if err := validateToken(this, ssotoken); err != nil {
@@ -132,7 +132,7 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 					ctx.Redirect(302, this.ssoLoginUri)
 				}
 			} else {
-				ctx.Redirect(302, this.config.RedirectUri)
+				ctx.Redirect(302, this.Config.RedirectUri)
 			}
 		} else {
 			if !this.nativeLogin {
@@ -141,10 +141,10 @@ func (this *SSOClient) HijackRequest(ctx *context.Context) {
 		}
 	} else {
 		needFilter := false
-		if len(this.config.FilterPaths) == 1 && this.config.FilterPaths[0] == "*" {
+		if len(this.Config.FilterPaths) == 1 && this.Config.FilterPaths[0] == "*" {
 			needFilter = true
 		} else {
-			for _, path := range this.config.FilterPaths {
+			for _, path := range this.Config.FilterPaths {
 				if strings.Index(ctx.Input.URL(), path) >= 0 {
 					needFilter = true
 					break
@@ -206,7 +206,7 @@ func getCode(client *SSOClient, ctx *context.Context, err error) {
 		loginUri = client.ssoLoginUri
 	}
 	query := fmt.Sprintf("client_id=%s&redirect_uri=%s&login_uri=%s",
-		client.config.ClientId, client.config.RedirectUri, url.QueryEscape(loginUri))
+		client.Config.ClientId, client.Config.RedirectUri, url.QueryEscape(loginUri))
 
 	if ctx.Input.IsAjax() {
 		ctx.Output.Status = 403
@@ -218,7 +218,7 @@ func getCode(client *SSOClient, ctx *context.Context, err error) {
 
 func getToken(client *SSOClient, ctx *context.Context) {
 	query := fmt.Sprintf("grant_type=authorization_code&code=%s&client_id=%s&client_secret=%s&redirect_uri=%s",
-		ctx.Input.Query("code"), client.config.ClientId, client.config.ClientSecret, url.QueryEscape(client.config.RedirectUri))
+		ctx.Input.Query("code"), client.Config.ClientId, client.Config.ClientSecret, url.QueryEscape(client.Config.RedirectUri))
 	ctx.Redirect(302, client.authProxyToken+"?"+query)
 }
 
