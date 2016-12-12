@@ -186,8 +186,8 @@ func (this *SSOClient) CheckClientPermission(ctx *context.Context) (data []byte,
 func (this *SSOClient) Logout(ctx *context.Context) (err error) {
 	var ssotoken string
 	if ssotoken, err = parseToken(ctx); err == nil {
+		ctx.Input.CruSession.Delete("token")
 		if _, err = get(this.logoutUri + "?access_token=" + ssotoken); err == nil {
-			ctx.Input.CruSession.Set("token", "")
 			if this.nativeLogin {
 				ctx.Redirect(302, this.loginUri)
 			} else {
